@@ -139,7 +139,7 @@ export async function getDashboardTransactions(): Promise<Transaction[]> {
     throw new Error("EXPO_PUBLIC_API_URL n'est pas configure.");
   }
 
-  console.log("Fetching transactions from API:", apiUrl);
+  // console.log("Fetching transactions from API:", apiUrl);
 
   const response = await fetch(apiUrl, {
     headers: {

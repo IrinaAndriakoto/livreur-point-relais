@@ -119,11 +119,11 @@ export default function HomeScreen() {
             <ThemedText type="defaultSemiBold" style={styles.relayColumn}>
               Point relais
             </ThemedText>
-            <ThemedText type="defaultSemiBold" style={styles.windowColumn}>
-              Assure
-            </ThemedText>
             <ThemedText type="defaultSemiBold" style={styles.amountColumn}>
               Prime
+            </ThemedText>
+            <ThemedText type="defaultSemiBold" style={styles.idColumn}>
+              Action
             </ThemedText>
           </View>
 
@@ -136,8 +136,17 @@ export default function HomeScreen() {
               <ThemedText style={styles.relayColumn}>
                 {transaction.pointRelais}
               </ThemedText>
-              <ThemedText style={styles.windowColumn}>
-                {transaction.nomAssure}
+              <ThemedText style={styles.amountColumn}>
+                5000 Ar
+              </ThemedText>
+              <ThemedText style={styles.idColumn}>
+                {/* <Link href={`/transactions/${transaction.idTransaction}`} asChild> */}
+                  <TouchableOpacity style={styles.primaryButton}>
+                    <ThemedText type="defaultSemiBold" style={styles.primaryButtonText}>
+                      Recupérer
+                    </ThemedText>
+                  </TouchableOpacity>
+                {/* </Link> */}
               </ThemedText>
             </View>
           ))}
@@ -163,11 +172,11 @@ export default function HomeScreen() {
             <ThemedText type="title" style={styles.title}>
               Livreur Point Relais
             </ThemedText>
-            <ThemedText style={styles.heroDescription}>
+            {/* <ThemedText style={styles.heroDescription}>
               Une page d'accueil claire pour piloter les remises, visualiser les
               points relais et brancher vos futurs appels backend sans refaire
               l'interface.
-            </ThemedText>
+            </ThemedText> */}
           </View>
 
           <View style={styles.ctaRow}>
@@ -208,10 +217,10 @@ export default function HomeScreen() {
         <ThemedView style={styles.transactionsSection}>
           <View style={styles.sectionHeader}>
             <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Tournees du jour
+              Attestations disponibles
             </ThemedText>
             <ThemedText style={styles.sectionDescription}>
-              Les transactions proviennent maintenant directement du backend.
+              Les attestations prêtes pour livraison sont affichées ici.
             </ThemedText>
           </View>
           <ThemedView style={styles.tableContainer}>
@@ -362,6 +371,16 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderColor: "rgba(32, 138, 239, 0.15)",
   },
+  // primaryButton: {
+  //   paddingHorizontal: 12,
+  //   paddingVertical: 8,
+  //   borderRadius: 999,
+  //   backgroundColor: "#208AEF",
+  // },
+  // primaryButtonText: {
+  //   color: "#FFFFFF",
+  //   fontWeight: "600",
+  // },
   table: {
     minWidth: 980,
   },

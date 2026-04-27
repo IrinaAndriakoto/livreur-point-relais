@@ -40,7 +40,7 @@ export function buildOpenStreetMapHtml(points: RelayPoint[]) {
       (point) => `
         L.marker([${point.latitude}, ${point.longitude}]).addTo(map)
           .bindPopup(
-            "<strong>${escapeHtml(point.name)}</strong><br/>Assureur: ${escapeHtml(point.insurerName)}<br/>Contrat: ${escapeHtml(point.contractRef)}}"
+            "<strong>${escapeHtml(point.name)}</strong><br/>Assureur: ${escapeHtml(point.insurerName)}<br/>Contrat: ${escapeHtml(point.contractRef)}"
           );
       `,
     )
