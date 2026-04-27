@@ -1,14 +1,23 @@
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
-const DURATION = 600;
+const DURATION = 800;
+const SPLASH_TIMEOUT = 2000; // 2 seconds timeout
 
 export function AnimatedSplashOverlay() {
   const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setVisible(false);
+    }, SPLASH_TIMEOUT);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!visible) return null;
 
@@ -40,7 +49,13 @@ export function AnimatedSplashOverlay() {
         }
       })}
       style={styles.backgroundSolidColor}
-    />
+    >
+      <Image
+        style={styles.splashImage}
+        source={require('@/assets/splash_screen.png')}
+        contentFit="cover"
+      />
+    </Animated.View>
   );
 }
 
@@ -128,5 +143,11 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#208AEF',
     zIndex: 1000,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  splashImage: {
+    width: '100%',
+    height: '100%',
   },
 });

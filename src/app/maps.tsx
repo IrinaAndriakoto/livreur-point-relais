@@ -30,9 +30,8 @@ export default function MapsScreen() {
             Carte des points relais
           </ThemedText>
           <ThemedText style={styles.description}>
-            La carte est deja en place. Il ne vous restera qu'a remplacer la
-            source de donnees par vos appels backend pour afficher les points
-            relais reels.
+            Cette vue lit directement les transactions geolocalisees du backend
+            et les projette sur OpenStreetMap.
           </ThemedText>
         </ThemedView>
 
@@ -41,9 +40,10 @@ export default function MapsScreen() {
         </ThemedView>
 
         <View style={styles.listHeader}>
-          <ThemedText type="subtitle">Points prepares</ThemedText>
+          <ThemedText type="subtitle">Points detectes</ThemedText>
           <ThemedText style={styles.description}>
-            Chaque point ci-dessous est deja lie a la carte.
+            Chaque point ci-dessous vient d'une transaction avec latitude et
+            longitude.
           </ThemedText>
         </View>
 
@@ -52,10 +52,10 @@ export default function MapsScreen() {
             <ThemedView key={point.id} type="backgroundElement" style={styles.pointCard}>
               <ThemedText type="defaultSemiBold">{point.name}</ThemedText>
               <ThemedText themeColor="textSecondary">
-                {point.address}, {point.city}
+                {point.insurerName}
               </ThemedText>
               <ThemedText style={styles.pointMeta}>
-                {point.availablePackages} colis en attente
+                Contrat {point.contractRef}
               </ThemedText>
             </ThemedView>
           ))}

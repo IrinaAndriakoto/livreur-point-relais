@@ -7,6 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "livreurpointrelais",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash_screen.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0b2f5c"
+    },
     "ios": {
       "icon": "./assets/expo.icon"
     },
@@ -28,10 +33,15 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "image": "./assets/splash_screen.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#0b2f5c",
+          "dark": {
+            "image": "./assets/splash_screen.png",
+            "backgroundColor": "#0b2f5c"
+          },
           "android": {
-            "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
+            "image": "./assets/splash_screen.png"
           }
         }
       ],

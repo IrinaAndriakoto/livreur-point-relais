@@ -1,152 +1,162 @@
-export type DeliveryStatus = "pending" | "assigned" | "delivered";
+export type DeliveryStatus = "pret_aro" | "enleve_livreur" | "remis";
 
 export type Transaction = {
-  id: string;
-  contractRef: string;
-  insurerName: string;
-  relayName: string;
-  relayAddress: string;
-  customerName: string;
-  scheduledWindow: string;
-  status: DeliveryStatus;
+  idTransaction: number;
+  idInterne: string;
+  nomAssureur: string;
+  refContrat: string;
+  nomAssure: string;
+  // livraison: string;
+  pointRelais: string;
+  dispatchStatus: DeliveryStatus;
+  dispatchStatusRaw: string;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export type RelayPoint = {
   id: string;
   name: string;
-  address: string;
-  city: string;
   latitude: number;
   longitude: number;
-  availablePackages: number;
+  insurerName: string;
+  contractRef: string;
 };
 
-const apiUrl = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "");
+const rawApiUrl = (process.env.EXPO_PUBLIC_API_URL ?? "").trim().replace(/\/+$/, "");
+const apiUrl = rawApiUrl?.endsWith("/getPret")
+  ? rawApiUrl
+  : `${rawApiUrl}/getPret`;
 
-export const mockTransactions: Transaction[] = [
-  {
-    id: "TX-24001",
-    contractRef: "CTR-AXA-1042",
-    insurerName: "AXA",
-    relayName: "Relay Saint-Lazare",
-    relayAddress: "12 Rue d'Amsterdam, Paris",
-    customerName: "Nadia B.",
-    scheduledWindow: "Aujourd'hui 14:00 - 16:00",
-    status: "pending",
-  },
-  {
-    id: "TX-24002",
-    contractRef: "CTR-MAAF-7781",
-    insurerName: "MAAF",
-    relayName: "Point Central Gare",
-    relayAddress: "4 Place de la Gare, Lyon",
-    customerName: "Karim T.",
-    scheduledWindow: "Aujourd'hui 16:00 - 18:00",
-    status: "assigned",
-  },
-  {
-    id: "TX-24003",
-    contractRef: "CTR-GMF-3309",
-    insurerName: "GMF",
-    relayName: "Relais Bellecour",
-    relayAddress: "18 Rue de la Barre, Lyon",
-    customerName: "Julie M.",
-    scheduledWindow: "Demain 09:00 - 11:00",
-    status: "delivered",
-  },
-];
-
-export const mockRelayPoints: RelayPoint[] = [
-  {
-    id: "RP-001",
-    name: "Relay Saint-Lazare",
-    address: "12 Rue d'Amsterdam",
-    city: "Paris",
-    latitude: 48.8764,
-    longitude: 2.3288,
-    availablePackages: 8,
-  },
-  {
-    id: "RP-002",
-    name: "Point Central Gare",
-    address: "4 Place de la Gare",
-    city: "Lyon",
-    latitude: 45.7607,
-    longitude: 4.8599,
-    availablePackages: 5,
-  },
-  {
-    id: "RP-003",
-    name: "Relais Bellecour",
-    address: "18 Rue de la Barre",
-    city: "Lyon",
-    latitude: 45.7579,
-    longitude: 4.832,
-    availablePackages: 11,
-  },
-];
-
-function normalizeTransactions(payload: unknown): Transaction[] {
-  if (!Array.isArray(payload)) {
-    return [];
+function normalizeNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
   }
 
-  return payload.map((item, index) => {
-    const record = typeof item === "object" && item !== null ? item : {};
-    const source = record as Record<string, unknown>;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
 
-    return {
-      id: String(source.id ?? source.idInterne ?? `TX-${index + 1}`),
-      contractRef: String(source.contractRef ?? source.refContrat ?? "A renseigner"),
-      insurerName: String(source.insurerName ?? source.nomAssureur ?? "A renseigner"),
-      relayName: String(source.relayName ?? source.point_relais ?? "Point relais"),
-      relayAddress: String(source.relayAddress ?? source.adresse ?? "Adresse a renseigner"),
-      customerName: String(source.customerName ?? source.nomClient ?? "Client"),
-      scheduledWindow: String(source.scheduledWindow ?? source.creneau ?? "A planifier"),
-      status: normalizeStatus(source.status),
-    };
-  });
+  return null;
+}
+
+function normalizeString(value: unknown, fallback = ""): string {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : fallback;
 }
 
 function normalizeStatus(status: unknown): DeliveryStatus {
-  switch (status) {
-    case "assigned":
-    case "delivered":
-    case "pending":
-      return status;
-    default:
-      return "pending";
+  const value = normalizeString(status).toLowerCase();
+
+  if (value.startsWith("pret")) { 
+    return "pret_aro";
   }
+
+  if (value.startsWith("enleve_livreur") ) {
+    return "enleve_livreur";
+  }
+
+  if (value.startsWith("remis")) {
+    return "remis";
+  }
+
+  return "pret_aro";
+}
+
+function normalizeTransactions(payload: unknown): Transaction[] {
+  if (!Array.isArray(payload)) {
+    throw new Error("Le backend n'a pas retourne une liste de transactions.");
+  }
+
+  return payload
+    .map((item) => {
+      if (typeof item !== "object" || item === null) {
+        return null;
+      }
+
+      const source = item as Record<string, unknown>;
+
+      return {
+        idTransaction: normalizeNumber(source.idTransaction) ?? 0,
+        idInterne: normalizeString(source.idInterne, "N/A"),
+        nomAssureur: normalizeString(source.nomAssureur, "N/A"),
+        refContrat: normalizeString(source.refContrat, "N/A"),
+        pointRelais: normalizeString(source.pointRelais, "Non renseigne"),
+        dispatchStatus: normalizeStatus(source.dispatchStatus),
+        dispatchStatusRaw: normalizeString(source.dispatchStatus, "pret_aro"),
+        latitude: normalizeNumber(source.latitude),
+        longitude: normalizeNumber(source.longitude),
+      };
+    })
+    .filter((transaction): transaction is Transaction => transaction !== null);
+}
+
+// export function formatCurrency(value: number | null) {
+//   if (value === null) {
+//     return "-";
+//   }
+
+//   return new Intl.NumberFormat("fr-FR").format(value);
+// }
+
+// export function formatTransactionDate(value: string) {
+//   if (!value) {
+//     return "-";
+//   }
+
+//   const date = new Date(value);
+
+//   if (Number.isNaN(date.getTime())) {
+//     return value;
+//   }
+
+//   return new Intl.DateTimeFormat("fr-FR", {
+//     dateStyle: "short",
+//     timeStyle: "short",
+//   }).format(date);
+// }
+
+export function mapTransactionsToRelayPoints(
+  transactions: Transaction[],
+): RelayPoint[] {
+  return transactions
+    .filter(
+      (transaction) =>
+        transaction.latitude !== null && transaction.longitude !== null,
+    )
+    .map((transaction) => ({
+      id: String(transaction.idTransaction),
+      name: transaction.pointRelais,
+      latitude: transaction.latitude as number,
+      longitude: transaction.longitude as number,
+      insurerName: transaction.nomAssureur,
+      contractRef: transaction.refContrat,
+    }));
 }
 
 export async function getDashboardTransactions(): Promise<Transaction[]> {
-  // TODO: remplacer par l'appel backend reel.
-  if (apiUrl) {
-    return mockTransactions;
+  if (!apiUrl) {
+    throw new Error("EXPO_PUBLIC_API_URL n'est pas configure.");
   }
 
-  // try {
-  //   const response = await fetch(apiUrl, {
-  //     headers: {
-  //       Accept: "application/json",
-  //     },
-  //   });
+  console.log("Fetching transactions from API:", apiUrl);
 
-  //   if (!response.ok) {
-  //     throw new Error(`Erreur ${response.status}`);
-  //   }
+  const response = await fetch(apiUrl, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
 
-  //   const data = await response.json();
-  //   const transactions = normalizeTransactions(data);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Erreur ${response.status}: ${errorText}`);
+  }
 
-  //   return transactions.length > 0 ? transactions : mockTransactions;
-  // } catch (error) {
-  //   console.error("[delivery-data] getDashboardTransactions", error);
-  //   return mockTransactions;
-  // }
+  const data = await response.json();
+  return normalizeTransactions(data);
 }
 
 export async function getRelayPoints(): Promise<RelayPoint[]> {
-  // TODO: remplacer par votre endpoint de points relais.
-  return mockRelayPoints;
+  const transactions = await getDashboardTransactions();
+  return mapTransactionsToRelayPoints(transactions);
 }

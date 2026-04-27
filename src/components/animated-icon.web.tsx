@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { Keyframe, Easing } from 'react-native-reanimated';
 
@@ -6,7 +7,29 @@ import classes from './animated-icon.module.css';
 const DURATION = 300;
 
 export function AnimatedSplashOverlay() {
-  return null;
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setVisible(false);
+    }, 600);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div style={overlayStyle}>
+      <Image
+        style={styles.webSplashImage}
+        source={require('@/assets/splash_screen.png')}
+        contentFit="cover"
+      />
+    </div>
+  );
 }
 
 const keyframe = new Keyframe({
@@ -105,4 +128,16 @@ const styles = StyleSheet.create({
     height: 128,
     position: 'absolute',
   },
+  webSplashImage: {
+    width: '100%',
+    height: '100%',
+  },
 });
+
+const overlayStyle = {
+  position: 'fixed' as const,
+  inset: 0,
+  zIndex: 1000,
+  backgroundColor: '#0b2f5c',
+  pointerEvents: 'none' as const,
+};

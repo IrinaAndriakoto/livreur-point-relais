@@ -11,11 +11,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AnimatedIcon } from "@/components/animated-icon";
+import { OpenStreetMapView } from "@/components/openstreetmap-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import {
   getDashboardTransactions,
+  mapTransactionsToRelayPoints,
   type Transaction,
 } from "@/lib/delivery-data";
 
@@ -49,13 +51,13 @@ export default function HomeScreen() {
 
   const stats = useMemo(() => {
     const pending = transactions.filter(
-      (transaction) => transaction.status === "pending",
+      (transaction) => transaction.dispatchStatus === "pret_aro",
     ).length;
     const assigned = transactions.filter(
-      (transaction) => transaction.status === "assigned",
+      (transaction) => transaction.dispatchStatus === "enleve_livreur",
     ).length;
     const delivered = transactions.filter(
-      (transaction) => transaction.status === "delivered",
+      (transaction) => transaction.dispatchStatus === "remis",
     ).length;
 
     return [
@@ -64,6 +66,11 @@ export default function HomeScreen() {
       { label: "Livrees", value: delivered, accent: "#1F9D61" },
     ];
   }, [transactions]);
+
+  const relayPoints = useMemo(
+    () => mapTransactionsToRelayPoints(transactions),
+    [transactions],
+  );
 
   const renderTransactionsTable = () => {
     if (isLoading) {
@@ -113,21 +120,24 @@ export default function HomeScreen() {
               Point relais
             </ThemedText>
             <ThemedText type="defaultSemiBold" style={styles.windowColumn}>
-              Creneau
+              Assure
+            </ThemedText>
+            <ThemedText type="defaultSemiBold" style={styles.amountColumn}>
+              Prime
             </ThemedText>
           </View>
 
           {transactions.map((transaction) => (
-            <View key={transaction.id} style={styles.tableRow}>
-              <ThemedText style={styles.idColumn}>{transaction.id}</ThemedText>
+            <View key={String(transaction.idTransaction)} style={styles.tableRow}>
+              <ThemedText style={styles.idColumn}>{transaction.idInterne}</ThemedText>
               <ThemedText style={styles.insurerColumn}>
-                {transaction.insurerName}
+                {transaction.nomAssureur}
               </ThemedText>
               <ThemedText style={styles.relayColumn}>
-                {transaction.relayName}
+                {transaction.pointRelais}
               </ThemedText>
               <ThemedText style={styles.windowColumn}>
-                {transaction.scheduledWindow}
+                {transaction.nomAssure}
               </ThemedText>
             </View>
           ))}
@@ -138,6 +148,7 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.heroSection}>
           <View style={styles.heroBadge}>
@@ -200,15 +211,46 @@ export default function HomeScreen() {
               Tournees du jour
             </ThemedText>
             <ThemedText style={styles.sectionDescription}>
-              Les donnees passent deja par une couche de service. Vous pourrez y
-              brancher ensuite vos vraies methodes backend.
+              Les transactions proviennent maintenant directement du backend.
             </ThemedText>
           </View>
           <ThemedView style={styles.tableContainer}>
             {renderTransactionsTable()}
           </ThemedView>
         </ThemedView>
+
+        <ThemedView style={styles.mapSection}>
+          <View style={styles.sectionHeader}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Carte des transactions
+            </ThemedText>
+            <ThemedText style={styles.sectionDescription}>
+              Les points geolocalises sont affiches sur OpenStreetMap a partir
+              des coordonnees du backend.
+            </ThemedText>
+          </View>
+          <ThemedView type="backgroundElement" style={styles.mapCard}>
+            <OpenStreetMapView points={relayPoints} />
+          </ThemedView>
+          <View style={styles.latestList}>
+            {transactions.slice(0, 5).map((transaction) => (
+              <ThemedView
+                key={`summary-${transaction.idTransaction}`}
+                type="backgroundElement"
+                style={styles.summaryCard}
+              >
+                <ThemedText type="defaultSemiBold">
+                  {transaction.idInterne} - {transaction.pointRelais}
+                </ThemedText>
+                <ThemedText themeColor="textSecondary">
+                  {transaction.nomAssureur} | {transaction.nomAssure}
+                </ThemedText>
+              </ThemedView>
+            ))}
+          </View>
+        </ThemedView>
       </SafeAreaView>
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -218,6 +260,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     flexDirection: "row",
+  },
+  scrollView: {
+    flex: 1,
   },
   safeArea: {
     flex: 1,
@@ -318,7 +363,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(32, 138, 239, 0.15)",
   },
   table: {
-    minWidth: 820,
+    minWidth: 980,
   },
   tableRow: {
     flexDirection: "row",
@@ -342,7 +387,10 @@ const styles = StyleSheet.create({
     width: 240,
   },
   windowColumn: {
-    width: 220,
+    width: 260,
+  },
+  amountColumn: {
+    width: 140,
   },
   tableState: {
     padding: 20,
@@ -369,5 +417,24 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: "#fff",
     fontWeight: "600",
+  },
+  mapSection: {
+    gap: Spacing.two,
+    paddingBottom: Spacing.three,
+  },
+  mapCard: {
+    padding: Spacing.two,
+    borderRadius: Spacing.four,
+  },
+  latestList: {
+    gap: Spacing.two,
+  },
+  summaryCard: {
+    padding: Spacing.three,
+    borderRadius: Spacing.three,
+    gap: Spacing.one,
+  },
+  summaryMeta: {
+    color: "#208AEF",
   },
 });
