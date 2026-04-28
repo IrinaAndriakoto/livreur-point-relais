@@ -1,9 +1,14 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
 import { Tabs } from "expo-router";
 import React from "react";
-import { Image, useColorScheme } from "react-native";
+import { useColorScheme } from "react-native";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 
 export default function TabLayout() {
@@ -16,7 +21,7 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: "#208AEF",
+          tabBarActiveTintColor: palette.accent,
           tabBarInactiveTintColor: palette.textSecondary,
           tabBarStyle: {
             backgroundColor: palette.background,
@@ -32,10 +37,16 @@ export default function TabLayout() {
           options={{
             title: "Accueil",
             tabBarIcon: ({ color }) => (
-              <Image
-                source={require("@/assets/images/tabIcons/home.png")}
-                style={{ tintColor: color, width: 22, height: 22 }}
-              />
+              <IconSymbol size={28} name="house.fill" color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="attestations"
+          options={{
+            title: "Attestations",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="doc.fill" color={color} />
             ),
           }}
         />
@@ -44,10 +55,7 @@ export default function TabLayout() {
           options={{
             title: "Carte",
             tabBarIcon: ({ color }) => (
-              <Image
-                source={require("@/assets/images/tabIcons/explore.png")}
-                style={{ tintColor: color, width: 22, height: 22 }}
-              />
+              <IconSymbol size={28} name="map.fill" color={color} />
             ),
           }}
         />

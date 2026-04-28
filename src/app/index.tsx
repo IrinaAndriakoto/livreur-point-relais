@@ -1,27 +1,30 @@
-import { Link } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { Link } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AnimatedIcon } from "@/components/animated-icon";
-import { OpenStreetMapView } from "@/components/openstreetmap-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import {
-  getDashboardTransactions,
-  mapTransactionsToRelayPoints,
-  type Transaction,
-} from "@/lib/delivery-data";
+  BottomTabInset,
+  Colors,
+  MaxContentWidth,
+  Spacing,
+} from "@/constants/theme";
+import { getDashboardTransactions, type Transaction } from "@/lib/delivery-data";
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme();
+  const palette = Colors[colorScheme ?? "light"];
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,204 +64,146 @@ export default function HomeScreen() {
     ).length;
 
     return [
-      { label: "En attente", value: pending, accent: "#E88A1D" },
-      { label: "Assignees", value: assigned, accent: "#208AEF" },
-      { label: "Livrees", value: delivered, accent: "#1F9D61" },
+      { label: "En attente", value: pending, accent: palette.warning },
+      { label: "Assignees", value: assigned, accent: palette.accent },
+      { label: "Livrees", value: delivered, accent: palette.success },
     ];
-  }, [transactions]);
-
-  const relayPoints = useMemo(
-    () => mapTransactionsToRelayPoints(transactions),
-    [transactions],
-  );
-
-  const renderTransactionsTable = () => {
-    if (isLoading) {
-      return (
-        <View style={styles.tableState}>
-          <ActivityIndicator size="large" />
-          <ThemedText style={styles.tableStateText}>Chargement...</ThemedText>
-        </View>
-      );
-    }
-
-    if (error) {
-      return (
-        <View style={styles.tableState}>
-          <ThemedText type="defaultSemiBold" style={styles.errorText}>
-            Erreur
-          </ThemedText>
-          <ThemedText style={styles.tableStateText}>{error}</ThemedText>
-          <TouchableOpacity style={styles.retryButton} onPress={loadTransactions}>
-            <ThemedText style={styles.retryButtonText}>Reessayer</ThemedText>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (transactions.length === 0) {
-      return (
-        <View style={styles.tableState}>
-          <ThemedText style={styles.tableStateText}>
-            Aucune transaction pour le moment
-          </ThemedText>
-        </View>
-      );
-    }
-
-    return (
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.table}>
-          <View style={[styles.tableRow, styles.tableHeader]}>
-            <ThemedText type="defaultSemiBold" style={styles.idColumn}>
-              ID
-            </ThemedText>
-            <ThemedText type="defaultSemiBold" style={styles.insurerColumn}>
-              Assureur
-            </ThemedText>
-            <ThemedText type="defaultSemiBold" style={styles.relayColumn}>
-              Point relais
-            </ThemedText>
-            <ThemedText type="defaultSemiBold" style={styles.amountColumn}>
-              Prime
-            </ThemedText>
-            <ThemedText type="defaultSemiBold" style={styles.idColumn}>
-              Action
-            </ThemedText>
-          </View>
-
-          {transactions.map((transaction) => (
-            <View key={String(transaction.idTransaction)} style={styles.tableRow}>
-              <ThemedText style={styles.idColumn}>{transaction.idInterne}</ThemedText>
-              <ThemedText style={styles.insurerColumn}>
-                {transaction.nomAssureur}
-              </ThemedText>
-              <ThemedText style={styles.relayColumn}>
-                {transaction.pointRelais}
-              </ThemedText>
-              <ThemedText style={styles.amountColumn}>
-                5000 Ar
-              </ThemedText>
-              <ThemedText style={styles.idColumn}>
-                {/* <Link href={`/transactions/${transaction.idTransaction}`} asChild> */}
-                  <TouchableOpacity style={styles.primaryButton}>
-                    <ThemedText type="defaultSemiBold" style={styles.primaryButtonText}>
-                      Recupérer
-                    </ThemedText>
-                  </TouchableOpacity>
-                {/* </Link> */}
-              </ThemedText>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    );
-  };
+  }, [palette.accent, palette.success, palette.warning, transactions]);
 
   return (
     <ThemedView style={styles.container}>
       <ScrollView style={styles.scrollView}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <View style={styles.heroBadge}>
-            <ThemedText type="smallBold" style={styles.heroBadgeText}>
-              Tableau de bord logistique
-            </ThemedText>
-          </View>
+        <SafeAreaView style={styles.safeArea}>
+          <ThemedView
+            style={[
+              styles.heroSection,
+              { backgroundColor: palette.heroBackground },
+            ]}
+          >
+            <ThemedView
+              style={[
+                styles.heroBadge,
+                { backgroundColor: palette.heroBadgeBackground },
+              ]}
+            >
+              <ThemedText
+                type="smallBold"
+                style={[styles.heroBadgeText, { color: palette.heroBadgeText }]}
+              >
+                Tableau de bord logistique
+              </ThemedText>
+            </ThemedView>
 
-          <AnimatedIcon />
+            <AnimatedIcon />
 
-          <View style={styles.heroCopy}>
-            <ThemedText type="title" style={styles.title}>
-              Livreur Point Relais
-            </ThemedText>
-            {/* <ThemedText style={styles.heroDescription}>
-              Une page d'accueil claire pour piloter les remises, visualiser les
-              points relais et brancher vos futurs appels backend sans refaire
-              l'interface.
-            </ThemedText> */}
-          </View>
+            <View style={styles.heroCopy}>
+              <ThemedText type="title" style={styles.title}>
+                Livreur Point Relais
+              </ThemedText>
+              <ThemedText
+                style={[
+                  styles.heroDescription,
+                  { color: palette.heroDescription },
+                ]}
+              >
+                Suivi des remises et acces rapide aux ecrans de travail.
+              </ThemedText>
+            </View>
 
-          <View style={styles.ctaRow}>
-            <Link href="/maps" asChild>
-              <TouchableOpacity style={styles.primaryButton}>
-                <ThemedText style={styles.primaryButtonText}>
-                  Ouvrir la carte OSM
+            <View style={styles.ctaRow}>
+              <Link href="/maps" asChild>
+                <TouchableOpacity
+                  style={[
+                    styles.primaryButton,
+                    { backgroundColor: palette.primaryButtonBackground },
+                  ]}
+                >
+                  <ThemedText
+                    style={[
+                      styles.primaryButtonText,
+                      { color: palette.primaryButtonText },
+                    ]}
+                  >
+                    Ouvrir la carte
+                  </ThemedText>
+                </TouchableOpacity>
+              </Link>
+              <TouchableOpacity
+                style={[
+                  styles.secondaryButton,
+                  {
+                    backgroundColor: palette.secondaryButtonBackground,
+                    borderColor: palette.secondaryButtonBorder,
+                  },
+                ]}
+                onPress={loadTransactions}
+              >
+                <ThemedText
+                  type="defaultSemiBold"
+                  style={{ color: palette.secondaryButtonText }}
+                >
+                  Actualiser
                 </ThemedText>
               </TouchableOpacity>
-            </Link>
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={loadTransactions}
-            >
-              <ThemedText type="defaultSemiBold">Actualiser</ThemedText>
-            </TouchableOpacity>
-          </View>
-        </ThemedView>
-
-        <View style={styles.statsGrid}>
-          {stats.map((stat) => (
-            <ThemedView
-              key={stat.label}
-              type="backgroundElement"
-              style={styles.statCard}
-            >
-              <View
-                style={[styles.statAccent, { backgroundColor: stat.accent }]}
-              />
-              <ThemedText type="small" themeColor="textSecondary">
-                {stat.label}
-              </ThemedText>
-              <ThemedText type="subtitle">{String(stat.value)}</ThemedText>
-            </ThemedView>
-          ))}
-        </View>
-
-        <ThemedView style={styles.transactionsSection}>
-          <View style={styles.sectionHeader}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Attestations disponibles
-            </ThemedText>
-            <ThemedText style={styles.sectionDescription}>
-              Les attestations prêtes pour livraison sont affichées ici.
-            </ThemedText>
-          </View>
-          <ThemedView style={styles.tableContainer}>
-            {renderTransactionsTable()}
+            </View>
           </ThemedView>
-        </ThemedView>
 
-        <ThemedView style={styles.mapSection}>
-          <View style={styles.sectionHeader}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Carte des transactions
-            </ThemedText>
-            <ThemedText style={styles.sectionDescription}>
-              Les points geolocalises sont affiches sur OpenStreetMap a partir
-              des coordonnees du backend.
-            </ThemedText>
-          </View>
-          <ThemedView type="backgroundElement" style={styles.mapCard}>
-            <OpenStreetMapView points={relayPoints} />
-          </ThemedView>
-          <View style={styles.latestList}>
-            {transactions.slice(0, 5).map((transaction) => (
+          <View style={styles.statsGrid}>
+            {stats.map((stat) => (
               <ThemedView
-                key={`summary-${transaction.idTransaction}`}
+                key={stat.label}
                 type="backgroundElement"
-                style={styles.summaryCard}
+                style={styles.statCard}
               >
-                <ThemedText type="defaultSemiBold">
-                  {transaction.idInterne} - {transaction.pointRelais}
+                <View
+                  style={[styles.statAccent, { backgroundColor: stat.accent }]}
+                />
+                <ThemedText type="small" themeColor="textSecondary">
+                  {stat.label}
                 </ThemedText>
-                <ThemedText themeColor="textSecondary">
-                  {transaction.nomAssureur} | {transaction.nomAssure}
-                </ThemedText>
+                <ThemedText type="subtitle">{String(stat.value)}</ThemedText>
               </ThemedView>
             ))}
           </View>
-        </ThemedView>
-      </SafeAreaView>
+
+          {error ? (
+            <ThemedView
+              type="backgroundElement"
+              style={[
+                styles.feedbackCard,
+                {
+                  borderColor: palette.tableBorder,
+                },
+              ]}
+            >
+              <ThemedText
+                type="defaultSemiBold"
+                style={{ color: palette.danger }}
+              >
+                Erreur de chargement
+              </ThemedText>
+              <ThemedText themeColor="textSecondary">{error}</ThemedText>
+            </ThemedView>
+          ) : null}
+
+          <ThemedView
+            type="backgroundElement"
+            style={[
+              styles.feedbackCard,
+              {
+                borderColor: palette.tableBorder,
+                backgroundColor: palette.backgroundElement,
+              },
+            ]}
+          >
+            <ThemedText type="defaultSemiBold">Transactions chargees</ThemedText>
+            <ThemedText themeColor="textSecondary">
+              {isLoading
+                ? "Mise a jour en cours..."
+                : `${transactions.length} transaction(s) disponibles.`}
+            </ThemedText>
+          </ThemedView>
+        </SafeAreaView>
       </ScrollView>
     </ThemedView>
   );
@@ -288,17 +233,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
     gap: Spacing.four,
     borderRadius: Spacing.five,
-    backgroundColor: "#EAF5FF",
   },
   heroBadge: {
     alignSelf: "flex-start",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "#D5EBFF",
   },
   heroBadgeText: {
-    color: "#14578D",
+    fontWeight: "600",
   },
   heroCopy: {
     gap: Spacing.two,
@@ -308,7 +251,6 @@ const styles = StyleSheet.create({
   },
   heroDescription: {
     maxWidth: 620,
-    color: "#365B77",
   },
   ctaRow: {
     flexDirection: "row",
@@ -319,10 +261,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 999,
-    backgroundColor: "#208AEF",
   },
   primaryButtonText: {
-    color: "#FFFFFF",
     fontWeight: "600",
   },
   secondaryButton: {
@@ -330,8 +270,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#9AC8F1",
-    backgroundColor: "#FFFFFF",
   },
   statsGrid: {
     flexDirection: "row",
@@ -350,110 +288,10 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 999,
   },
-  transactionsSection: {
-    flex: 1,
-    gap: Spacing.two,
-  },
-  sectionHeader: {
-    paddingHorizontal: Spacing.two,
-    gap: Spacing.one,
-  },
-  sectionTitle: {
-    paddingHorizontal: 0,
-  },
-  sectionDescription: {
-    opacity: 0.7,
-  },
-  tableContainer: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: Spacing.three,
-    overflow: "hidden",
-    borderColor: "rgba(32, 138, 239, 0.15)",
-  },
-  // primaryButton: {
-  //   paddingHorizontal: 12,
-  //   paddingVertical: 8,
-  //   borderRadius: 999,
-  //   backgroundColor: "#208AEF",
-  // },
-  // primaryButtonText: {
-  //   color: "#FFFFFF",
-  //   fontWeight: "600",
-  // },
-  table: {
-    minWidth: 980,
-  },
-  tableRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.1)",
-  },
-  tableHeader: {
-    backgroundColor: "rgba(59, 130, 246, 0.08)",
-    borderBottomWidth: 2,
-  },
-  idColumn: {
-    width: 120,
-  },
-  insurerColumn: {
-    width: 140,
-  },
-  relayColumn: {
-    width: 240,
-  },
-  windowColumn: {
-    width: 260,
-  },
-  amountColumn: {
-    width: 140,
-  },
-  tableState: {
-    padding: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.two,
-    flex: 1,
-  },
-  tableStateText: {
-    textAlign: "center",
-    opacity: 0.7,
-  },
-  errorText: {
-    textAlign: "center",
-    color: "#e74c3c",
-  },
-  retryButton: {
-    marginTop: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: "#3b82f6",
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-  mapSection: {
-    gap: Spacing.two,
-    paddingBottom: Spacing.three,
-  },
-  mapCard: {
-    padding: Spacing.two,
-    borderRadius: Spacing.four,
-  },
-  latestList: {
-    gap: Spacing.two,
-  },
-  summaryCard: {
+  feedbackCard: {
     padding: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: Spacing.four,
     gap: Spacing.one,
-  },
-  summaryMeta: {
-    color: "#208AEF",
+    borderWidth: 1,
   },
 });

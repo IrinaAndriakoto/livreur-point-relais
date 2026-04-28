@@ -4,7 +4,7 @@
     "slug": "livreur-point-relais",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/cube.png",
     "scheme": "livreurpointrelais",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -26,7 +26,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/cube.png"
     },
     "plugins": [
       "expo-router",

@@ -6,8 +6,8 @@ export type Transaction = {
   nomAssureur: string;
   refContrat: string;
   nomAssure: string;
-  // livraison: string;
   pointRelais: string;
+  montantPrime: number | null;
   dispatchStatus: DeliveryStatus;
   dispatchStatusRaw: string;
   latitude: number | null;
@@ -21,9 +21,12 @@ export type RelayPoint = {
   longitude: number;
   insurerName: string;
   contractRef: string;
+  insuredName: string;
 };
 
-const rawApiUrl = (process.env.EXPO_PUBLIC_API_URL ?? "").trim().replace(/\/+$/, "");
+const rawApiUrl = (process.env.EXPO_PUBLIC_API_URL ?? "")
+  .trim()
+  .replace(/\/+$/, "");
 const apiUrl = rawApiUrl?.endsWith("/getPret")
   ? rawApiUrl
   : `${rawApiUrl}/getPret`;
@@ -48,11 +51,11 @@ function normalizeString(value: unknown, fallback = ""): string {
 function normalizeStatus(status: unknown): DeliveryStatus {
   const value = normalizeString(status).toLowerCase();
 
-  if (value.startsWith("pret")) { 
+  if (value.startsWith("pret")) {
     return "pret_aro";
   }
 
-  if (value.startsWith("enleve_livreur") ) {
+  if (value.startsWith("enleve_livreur")) {
     return "enleve_livreur";
   }
 
@@ -81,7 +84,9 @@ function normalizeTransactions(payload: unknown): Transaction[] {
         idInterne: normalizeString(source.idInterne, "N/A"),
         nomAssureur: normalizeString(source.nomAssureur, "N/A"),
         refContrat: normalizeString(source.refContrat, "N/A"),
+        nomAssure: normalizeString(source.nomAssure, "N/A"),
         pointRelais: normalizeString(source.pointRelais, "Non renseigne"),
+        montantPrime: normalizeNumber(source.montantPrime),
         dispatchStatus: normalizeStatus(source.dispatchStatus),
         dispatchStatusRaw: normalizeString(source.dispatchStatus, "pret_aro"),
         latitude: normalizeNumber(source.latitude),
@@ -91,30 +96,13 @@ function normalizeTransactions(payload: unknown): Transaction[] {
     .filter((transaction): transaction is Transaction => transaction !== null);
 }
 
-// export function formatCurrency(value: number | null) {
-//   if (value === null) {
-//     return "-";
-//   }
+export function formatCurrency(value: number | null) {
+  if (value === null) {
+    return "-";
+  }
 
-//   return new Intl.NumberFormat("fr-FR").format(value);
-// }
-
-// export function formatTransactionDate(value: string) {
-//   if (!value) {
-//     return "-";
-//   }
-
-//   const date = new Date(value);
-
-//   if (Number.isNaN(date.getTime())) {
-//     return value;
-//   }
-
-//   return new Intl.DateTimeFormat("fr-FR", {
-//     dateStyle: "short",
-//     timeStyle: "short",
-//   }).format(date);
-// }
+  return `${new Intl.NumberFormat("fr-FR").format(value)} Ar`;
+}
 
 export function mapTransactionsToRelayPoints(
   transactions: Transaction[],
@@ -131,6 +119,7 @@ export function mapTransactionsToRelayPoints(
       longitude: transaction.longitude as number,
       insurerName: transaction.nomAssureur,
       contractRef: transaction.refContrat,
+      insuredName: transaction.nomAssure,
     }));
 }
 
@@ -138,8 +127,6 @@ export async function getDashboardTransactions(): Promise<Transaction[]> {
   if (!apiUrl) {
     throw new Error("EXPO_PUBLIC_API_URL n'est pas configure.");
   }
-
-  // console.log("Fetching transactions from API:", apiUrl);
 
   const response = await fetch(apiUrl, {
     headers: {

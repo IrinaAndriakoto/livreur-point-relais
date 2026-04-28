@@ -1,14 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  useColorScheme,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { OpenStreetMapView } from "@/components/openstreetmap-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import {
+  BottomTabInset,
+  Colors,
+  MaxContentWidth,
+  Spacing,
+} from "@/constants/theme";
 import { getRelayPoints, type RelayPoint } from "@/lib/delivery-data";
 
 export default function MapsScreen() {
+  const colorScheme = useColorScheme();
+  const palette = Colors[colorScheme ?? "light"];
   const [relayPoints, setRelayPoints] = useState<RelayPoint[]>([]);
 
   useEffect(() => {
@@ -20,18 +32,26 @@ export default function MapsScreen() {
   }, []);
 
   return (
-    <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={styles.contentContainer}
+    >
       <SafeAreaView style={styles.container}>
-        <ThemedView style={styles.heroCard}>
-          <ThemedText type="smallBold" style={styles.eyebrow}>
+        <ThemedView
+          style={[styles.heroCard, { backgroundColor: palette.mapHeroBackground }]}
+        >
+          <ThemedText
+            type="smallBold"
+            style={[styles.eyebrow, { color: palette.mapHeroEyebrow }]}
+          >
             OpenStreetMap
           </ThemedText>
           <ThemedText type="title" style={styles.title}>
             Carte des points relais
           </ThemedText>
-          <ThemedText style={styles.description}>
-            Cette vue lit directement les transactions geolocalisees du backend
-            et les projette sur OpenStreetMap.
+          <ThemedText themeColor="textSecondary" style={styles.description}>
+            Cette carte montre directement les attestations geolocalisees a
+            livrer.
           </ThemedText>
         </ThemedView>
 
@@ -41,7 +61,7 @@ export default function MapsScreen() {
 
         <View style={styles.listHeader}>
           <ThemedText type="subtitle">Points detectes</ThemedText>
-          <ThemedText style={styles.description}>
+          <ThemedText themeColor="textSecondary" style={styles.description}>
             Chaque point ci-dessous vient d'une transaction avec latitude et
             longitude.
           </ThemedText>
@@ -49,12 +69,16 @@ export default function MapsScreen() {
 
         <View style={styles.pointsGrid}>
           {relayPoints.map((point) => (
-            <ThemedView key={point.id} type="backgroundElement" style={styles.pointCard}>
+            <ThemedView
+              key={point.id}
+              type="backgroundElement"
+              style={styles.pointCard}
+            >
               <ThemedText type="defaultSemiBold">{point.name}</ThemedText>
               <ThemedText themeColor="textSecondary">
                 {point.insurerName}
               </ThemedText>
-              <ThemedText style={styles.pointMeta}>
+              <ThemedText style={{ color: palette.accent }}>
                 Contrat {point.contractRef}
               </ThemedText>
             </ThemedView>
@@ -85,12 +109,9 @@ const styles = StyleSheet.create({
   heroCard: {
     borderRadius: Spacing.five,
     padding: Spacing.four,
-    backgroundColor: "#F3F8EC",
     gap: Spacing.two,
   },
-  eyebrow: {
-    color: "#507B23",
-  },
+  eyebrow: {},
   title: {
     fontSize: 40,
     lineHeight: 44,
@@ -112,8 +133,5 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.four,
     padding: Spacing.three,
     gap: Spacing.one,
-  },
-  pointMeta: {
-    color: "#208AEF",
   },
 });
