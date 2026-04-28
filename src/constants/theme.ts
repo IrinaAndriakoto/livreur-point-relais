@@ -4,8 +4,8 @@ import { Platform } from "react-native";
 
 export const Colors = {
   light: {
-    text: "#000000",
-    background: "#FFFFFF",
+    text: "#010013",
+    background: "#FAF9F6",
     backgroundElement: "#F0F0F3",
     backgroundSelected: "#E0E1E6",
     textSecondary: "#60646C",
@@ -22,8 +22,9 @@ export const Colors = {
     mapHeroBackground: "#F3F8EC",
     mapHeroEyebrow: "#507B23",
     primaryButtonBackground: "#1A2953",
-    primaryButtonText: "#FFFFFF",
-    secondaryButtonBackground: "#FFFFFF",
+    primaryButtonBorder: "#24386E",
+    primaryButtonText: "#FAF9F6",
+    secondaryButtonBackground: "#FAF9F6",
     secondaryButtonBorder: "#9AC8F1",
     secondaryButtonText: "#1A2953",
     tableBorder: "rgba(32, 138, 239, 0.15)",
@@ -32,8 +33,8 @@ export const Colors = {
     summaryMeta: "rgba(26, 41, 83, 0.7)",
   },
   dark: {
-    text: "#FFFFFF",
-    background: "#000000",
+    text: "#FAF9F6",
+    background: "#010013",
     backgroundElement: "#212225",
     backgroundSelected: "#2E3135",
     textSecondary: "#B0B4BA",
@@ -50,7 +51,8 @@ export const Colors = {
     mapHeroBackground: "#243020",
     mapHeroEyebrow: "#B9D694",
     primaryButtonBackground: "#208AEF",
-    primaryButtonText: "#FFFFFF",
+    primaryButtonBorder: "#6BB8FF",
+    primaryButtonText: "#FAF9F6",
     secondaryButtonBackground: "#161A20",
     secondaryButtonBorder: "#335C84",
     secondaryButtonText: "#E8F2FF",

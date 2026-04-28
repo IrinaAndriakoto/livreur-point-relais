@@ -144,7 +144,7 @@ export default function AttestationsScreen() {
                 {transaction.pointRelais}
               </ThemedText>
               <ThemedText style={styles.amountColumn}>
-                {formatCurrency(transaction.montantPrime)}
+                5000 Ar
               </ThemedText>
               <View style={styles.actionColumn}>
                 <TouchableOpacity
@@ -157,7 +157,7 @@ export default function AttestationsScreen() {
                     type="defaultSemiBold"
                     style={{ color: palette.primaryButtonText }}
                   >
-                    Recuperee
+                    Récuperée
                   </ThemedText>
                 </TouchableOpacity>
               </View>

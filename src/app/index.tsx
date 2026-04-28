@@ -111,23 +111,23 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.ctaRow}>
-              <Link href="/maps" asChild>
                 <TouchableOpacity
                   style={[
                     styles.primaryButton,
-                    { backgroundColor: palette.primaryButtonBackground },
+                    {
+                      backgroundColor: palette.primaryButtonBackground,
+                      borderColor: palette.primaryButtonBorder,
+                    },
                   ]}
                 >
+                    <Link href="/maps" asChild>
                   <ThemedText
-                    style={[
-                      styles.primaryButtonText,
-                      { color: palette.primaryButtonText },
-                    ]}
+                    style={{color : "#FAF9F6"}}
                   >
                     Ouvrir la carte
                   </ThemedText>
-                </TouchableOpacity>
               </Link>
+                </TouchableOpacity>
               <TouchableOpacity
                 style={[
                   styles.secondaryButton,
@@ -196,7 +196,7 @@ export default function HomeScreen() {
               },
             ]}
           >
-            <ThemedText type="defaultSemiBold">Transactions chargees</ThemedText>
+            <ThemedText type="defaultSemiBold">Transactions chargées</ThemedText>
             <ThemedText themeColor="textSecondary">
               {isLoading
                 ? "Mise a jour en cours..."
@@ -261,6 +261,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 999,
+    borderWidth: 1,
+    minWidth: 156,
+    alignItems: "center",
   },
   primaryButtonText: {
     fontWeight: "600",
