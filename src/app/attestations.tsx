@@ -2,6 +2,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -22,6 +23,7 @@ import {
   formatCurrency,
   getDashboardTransactions,
   type Transaction,
+  updateTransactionDispatchStatus,
 } from "@/lib/delivery-data";
 
 export default function AttestationsScreen() {
@@ -30,6 +32,9 @@ export default function AttestationsScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadTransactions = useCallback(async () => {
     setIsLoading(true);
@@ -53,6 +58,36 @@ export default function AttestationsScreen() {
       loadTransactions();
     }, [loadTransactions]),
   );
+
+  const closeConfirmationModal = useCallback(async () => {
+    setSelectedTransaction(null);
+    await loadTransactions();
+  }, [loadTransactions]);
+
+  const cancelConfirmationModal = useCallback(() => {
+    setSelectedTransaction(null);
+  }, []);
+
+  const confirmPickup = useCallback(async () => {
+    if (!selectedTransaction) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await updateTransactionDispatchStatus(
+        selectedTransaction.idInterne,
+        "en_cours",
+      );
+      await closeConfirmationModal();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [closeConfirmationModal, selectedTransaction]);
 
   const renderTransactionsTable = () => {
     if (isLoading) {
@@ -123,7 +158,7 @@ export default function AttestationsScreen() {
             <ThemedText type="defaultSemiBold" style={styles.amountColumn}>
               Prime
             </ThemedText>
-            <ThemedText type="defaultSemiBold" style={styles.idColumn}>
+            <ThemedText type="defaultSemiBold" style={styles.actionColumn}>
               Action
             </ThemedText>
           </View>
@@ -144,20 +179,24 @@ export default function AttestationsScreen() {
                 {transaction.pointRelais}
               </ThemedText>
               <ThemedText style={styles.amountColumn}>
-                5000 Ar
+                {formatCurrency(5000)}
               </ThemedText>
               <View style={styles.actionColumn}>
                 <TouchableOpacity
                   style={[
                     styles.primaryButton,
-                    { backgroundColor: palette.primaryButtonBackground },
+                    {
+                      backgroundColor: palette.primaryButtonBackground,
+                      borderColor: palette.primaryButtonBorder,
+                    },
                   ]}
+                  onPress={() => setSelectedTransaction(transaction)}
                 >
                   <ThemedText
                     type="defaultSemiBold"
                     style={{ color: palette.primaryButtonText }}
                   >
-                    Récuperée
+                    Récupérée
                   </ThemedText>
                 </TouchableOpacity>
               </View>
@@ -178,7 +217,7 @@ export default function AttestationsScreen() {
                 Attestations disponibles
               </ThemedText>
               <ThemedText themeColor="textSecondary">
-                Les attestations pretes pour livraison sont affichees ici.
+                Les attestations prêtes pour livraison sont affichées ici.
               </ThemedText>
             </View>
             <ThemedView
@@ -192,6 +231,73 @@ export default function AttestationsScreen() {
           </ThemedView>
         </SafeAreaView>
       </ScrollView>
+
+      <Modal
+        visible={selectedTransaction !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelConfirmationModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <ThemedView
+            type="backgroundElement"
+            style={[
+              styles.modalCard,
+              {
+                borderColor: palette.tableBorder,
+                backgroundColor: palette.backgroundElement,
+              },
+            ]}
+          >
+            <ThemedText type="subtitle" style={styles.modalTitle}>
+              Confirmer l'action
+            </ThemedText>
+            <ThemedText themeColor="textSecondary">
+              Marquer la transaction {selectedTransaction?.idInterne} comme en cours ?
+            </ThemedText>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[
+                  styles.modalSecondaryButton,
+                  {
+                    backgroundColor: palette.secondaryButtonBackground,
+                    borderColor: palette.secondaryButtonBorder,
+                  },
+                ]}
+                onPress={cancelConfirmationModal}
+                disabled={isSubmitting}
+              >
+                <ThemedText
+                  type="defaultSemiBold"
+                  style={{ color: palette.secondaryButtonText }}
+                >
+                  Annuler
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalPrimaryButton,
+                  {
+                    backgroundColor: palette.primaryButtonBackground,
+                    borderColor: palette.primaryButtonBorder,
+                  },
+                ]}
+                onPress={confirmPickup}
+                disabled={isSubmitting}
+              >
+                <ThemedText
+                  type="defaultSemiBold"
+                  style={{ color: palette.primaryButtonText }}
+                >
+                  {isSubmitting ? "Validation..." : "Confirmer"}
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </ThemedView>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -258,12 +364,14 @@ const styles = StyleSheet.create({
     width: 140,
   },
   actionColumn: {
-    width: 120,
+    width: 140,
   },
   primaryButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
+    borderWidth: 1,
+    alignItems: "center",
   },
   tableState: {
     padding: 20,
@@ -281,5 +389,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.four,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+  },
+  modalCard: {
+    borderRadius: Spacing.four,
+    padding: Spacing.four,
+    gap: Spacing.three,
+    borderWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 24,
+    lineHeight: 30,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    flexWrap: "wrap",
+    gap: Spacing.two,
+  },
+  modalSecondaryButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  modalPrimaryButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 999,
+    borderWidth: 1,
   },
 });

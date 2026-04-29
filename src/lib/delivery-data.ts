@@ -143,6 +143,31 @@ export async function getDashboardTransactions(): Promise<Transaction[]> {
   return normalizeTransactions(data);
 }
 
+export async function updateTransactionDispatchStatus(
+  idInterne: string,
+  status = "en_cours",
+): Promise<void> {
+  if (!apiUrl) {
+    throw new Error("EXPO_PUBLIC_API_URL n'est pas configure.");
+  }
+
+  const baseUrl = apiUrl.replace(/\/getPret$/, "");
+  const response = await fetch(
+    `${baseUrl}/${encodeURIComponent(idInterne)}/updateDispatch?status=${encodeURIComponent(status)}`,
+    {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Erreur ${response.status}: ${errorText}`);
+  }
+}
+
 export async function getRelayPoints(): Promise<RelayPoint[]> {
   const transactions = await getDashboardTransactions();
   return mapTransactionsToRelayPoints(transactions);

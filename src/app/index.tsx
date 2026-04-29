@@ -65,8 +65,8 @@ export default function HomeScreen() {
 
     return [
       { label: "En attente", value: pending, accent: palette.warning },
-      { label: "Assignees", value: assigned, accent: palette.accent },
-      { label: "Livrees", value: delivered, accent: palette.success },
+      { label: "Assignées", value: assigned, accent: palette.accent },
+      { label: "Livrées", value: delivered, accent: palette.success },
     ];
   }, [palette.accent, palette.success, palette.warning, transactions]);
 
@@ -106,7 +106,7 @@ export default function HomeScreen() {
                   { color: palette.heroDescription },
                 ]}
               >
-                Suivi des remises et acces rapide aux ecrans de travail.
+                Suivi des remises et accès rapide aux écrans de travail.
               </ThemedText>
             </View>
 
@@ -128,6 +128,7 @@ export default function HomeScreen() {
                   </ThemedText>
               </Link>
                 </TouchableOpacity>
+
               <TouchableOpacity
                 style={[
                   styles.secondaryButton,
@@ -171,9 +172,7 @@ export default function HomeScreen() {
               type="backgroundElement"
               style={[
                 styles.feedbackCard,
-                {
-                  borderColor: palette.tableBorder,
-                },
+                { borderColor: palette.tableBorder },
               ]}
             >
               <ThemedText
@@ -185,24 +184,6 @@ export default function HomeScreen() {
               <ThemedText themeColor="textSecondary">{error}</ThemedText>
             </ThemedView>
           ) : null}
-
-          <ThemedView
-            type="backgroundElement"
-            style={[
-              styles.feedbackCard,
-              {
-                borderColor: palette.tableBorder,
-                backgroundColor: palette.backgroundElement,
-              },
-            ]}
-          >
-            <ThemedText type="defaultSemiBold">Transactions chargées</ThemedText>
-            <ThemedText themeColor="textSecondary">
-              {isLoading
-                ? "Mise a jour en cours..."
-                : `${transactions.length} transaction(s) disponibles.`}
-            </ThemedText>
-          </ThemedView>
         </SafeAreaView>
       </ScrollView>
     </ThemedView>
