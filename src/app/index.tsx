@@ -19,7 +19,7 @@ import {
   MaxContentWidth,
   Spacing,
 } from "@/constants/theme";
-import { getDashboardTransactions, type Transaction } from "@/lib/delivery-data";
+import { getDashboardTransactions, getLivraisonsWithDetails, type LivraisonDetail, type Transaction } from "@/lib/delivery-data";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -28,6 +28,7 @@ export default function HomeScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [livraisons, setLivraisons] = useState<LivraisonDetail[]>([]);
 
   const loadTransactions = useCallback(async () => {
     setIsLoading(true);
@@ -46,21 +47,35 @@ export default function HomeScreen() {
     }
   }, []);
 
+  const loadLivraisons = useCallback(async () => {
+    try {
+      const data = await getLivraisonsWithDetails();
+      setLivraisons(data);
+    } catch (err) {
+      setLivraisons([]);
+      console.error("[HomePage] Erreur chargement livraisons:", err);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadTransactions();
-    }, [loadTransactions]),
+      loadLivraisons();
+    }, [loadTransactions, loadLivraisons]),
   );
 
   const stats = useMemo(() => {
     const pending = transactions.filter(
       (transaction) => transaction.dispatchStatus === "pret_aro",
     ).length;
-    const assigned = transactions.filter(
-      (transaction) => transaction.dispatchStatus === "enleve_livreur",
+    const assigned = livraisons.filter(
+      (livraison) => livraison.statutLivraison?.toLowerCase() === "en_cours",
     ).length;
-    const delivered = transactions.filter(
-      (transaction) => transaction.dispatchStatus === "remis",
+    const delivered = livraisons.filter(
+      (livraison) => {
+        const s = livraison.statutLivraison?.toLowerCase();
+        return s === "livré" || s === "livre";
+      },
     ).length;
 
     return [
@@ -68,7 +83,7 @@ export default function HomeScreen() {
       { label: "Assignées", value: assigned, accent: palette.accent },
       { label: "Livrées", value: delivered, accent: palette.success },
     ];
-  }, [palette.accent, palette.success, palette.warning, transactions]);
+  }, [palette.accent, palette.success, palette.warning, transactions, livraisons]);
 
   return (
     <ThemedView style={styles.container}>
@@ -137,7 +152,7 @@ export default function HomeScreen() {
                     borderColor: palette.secondaryButtonBorder,
                   },
                 ]}
-                onPress={loadTransactions}
+                onPress={() => { loadTransactions(); loadLivraisons(); }}
               >
                 <ThemedText
                   type="defaultSemiBold"

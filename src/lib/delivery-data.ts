@@ -1,4 +1,4 @@
-export type DeliveryStatus = "pret_aro" | "enleve_livreur" | "en_cours" | "remis";
+export type DeliveryStatus = "pret_aro" | "enleve_livreur" | "en_cours" | "remis" | "au_cashpoint";
 
 export type Transaction = {
   idTransaction: number;
@@ -152,6 +152,18 @@ export function formatCurrency(value: number | null) {
   return `${new Intl.NumberFormat("fr-FR").format(value)} Ar`;
 }
 
+export function formatLivraisonStatus(status: string | null): string {
+  if (!status) return "-";
+  const s = status.toLowerCase();
+  if (s === "en_cours") return "En cours";
+  if (s === "livré" || s === "livre") return "Livré";
+  if (s === "pret_aro") return "Prêt ARO";
+  if (s === "enleve_livreur") return "Enlevé livreur";
+  if (s === "au_cashpoint") return "Au cashpoint";
+  if (s === "remis") return "Remis";
+  return status;
+}
+
 export function mapTransactionsToRelayPoints(
   transactions: Transaction[],
 ): RelayPoint[] {
@@ -210,6 +222,27 @@ export async function updateTransactionDispatchStatus(
   );
 
   if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Erreur ${response.status}: ${errorText}`);
+  }
+}
+
+export async function updateLivraisonStatus(idLivraison: number, status: string): Promise<void>{
+  if (!livraisonApiUrl) {
+    throw new Error("EXPO_PUBLIC_API_URL n'est pas configure.");
+  }
+  
+  const response = await fetch(
+    `${livraisonApiUrl}/${idLivraison}/updateStatus?status=${encodeURIComponent(status)}`,
+    {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+      },
+    },
+  );
+
+  if(!response.ok){
     const errorText = await response.text();
     throw new Error(`Erreur ${response.status}: ${errorText}`);
   }

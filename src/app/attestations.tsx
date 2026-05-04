@@ -22,8 +22,10 @@ import {
 import {
   createLivraison,
   formatCurrency,
+  formatLivraisonStatus,
   getDashboardTransactions,
   getLivraisonsWithDetails,
+  updateLivraisonStatus,
   updateTransactionDispatchStatus,
   type LivraisonDetail,
   type Transaction,
@@ -41,6 +43,7 @@ export default function AttestationsScreen() {
   const [livraisons, setLivraisons] = useState<LivraisonDetail[]>([]);
   const [isLoadingLivraisons, setIsLoadingLivraisons] = useState(false);
   const [errorLivraisons, setErrorLivraisons] = useState<string | null>(null);
+  const [isDeliveringId, setIsDeliveringId] = useState<string | null>(null);
 
   const loadTransactions = useCallback(async () => {
     setIsLoading(true);
@@ -151,6 +154,20 @@ export default function AttestationsScreen() {
     }
   }, [closeConfirmationModal, selectedTransaction]);
 
+  const handleDeliver = useCallback(async (idInterne: string, idLivraison: number) => {
+    setIsDeliveringId(idInterne);
+    try {
+      await updateTransactionDispatchStatus(idInterne, "au_cashpoint");
+      await updateLivraisonStatus(idLivraison, "livré");
+      await Promise.all([loadTransactions(), loadLivraisons()]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(message);
+    } finally {
+      setIsDeliveringId(null);
+    }
+  }, [loadTransactions, loadLivraisons]);
+
   const renderTransactionsTable = () => {
     if (isLoading) {
       return (
@@ -197,7 +214,7 @@ export default function AttestationsScreen() {
 
     return (
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.table}>
+        <View style={styles.transactionsTable}>
           <View
             style={[
               styles.tableRow,
@@ -257,7 +274,7 @@ export default function AttestationsScreen() {
                     type="defaultSemiBold"
                     style={{ color: palette.primaryButtonText }}
                   >
-                    Récupérée
+                    Récupérer
                   </ThemedText>
                 </TouchableOpacity>
               </View>
@@ -349,6 +366,9 @@ export default function AttestationsScreen() {
             <ThemedText type="defaultSemiBold" style={styles.dateRecupColumn}>
               Date récupération
             </ThemedText>
+            <ThemedText type="defaultSemiBold" style={styles.livraisonActionColumn}>
+              Action
+            </ThemedText>
           </View>
 
           {/* Lignes */}
@@ -377,7 +397,7 @@ export default function AttestationsScreen() {
                 {livraison.pointRelais}
               </ThemedText>
               <ThemedText style={styles.statutColumn}>
-                {livraison.statutLivraison ?? "-"}
+                {formatLivraisonStatus(livraison.statutLivraison)}
               </ThemedText>
               <ThemedText style={styles.dateRecupColumn}>
                 {livraison.dateRecuperation
@@ -386,6 +406,28 @@ export default function AttestationsScreen() {
                     )
                   : "-"}
               </ThemedText>
+              <View style={styles.actionColumn}>
+                {livraison.statutLivraison?.toLowerCase() === "en_cours" && (
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryButton,
+                      {
+                        backgroundColor: palette.primaryButtonBackground,
+                        borderColor: palette.primaryButtonBorder,
+                      },
+                    ]}
+                    onPress={() => handleDeliver(livraison.idInterne, livraison.idLivraison)}
+                    disabled={isDeliveringId === livraison.idInterne}
+                  >
+                    <ThemedText
+                      type="defaultSemiBold"
+                      style={{ color: palette.primaryButtonText }}
+                    >
+                      {isDeliveringId === livraison.idInterne ? "..." : "Livrer"}
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           ))}
         </View>
@@ -545,7 +587,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   table: {
-    minWidth: 980,
+    minWidth: 1100,
+  },
+  transactionsTable: {
+    minWidth: 780,
   },
   tableRow: {
     flexDirection: "row",
@@ -591,6 +636,9 @@ const styles = StyleSheet.create({
   },
   dateRecupColumn: {
     width: 140,
+  },
+  livraisonActionColumn: {
+    width: 120,
   },
   primaryButton: {
     paddingHorizontal: 12,
