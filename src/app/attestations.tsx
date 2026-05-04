@@ -20,10 +20,13 @@ import {
   Spacing,
 } from "@/constants/theme";
 import {
+  createLivraison,
   formatCurrency,
   getDashboardTransactions,
-  type Transaction,
+  getLivraisonsWithDetails,
   updateTransactionDispatchStatus,
+  type LivraisonDetail,
+  type Transaction,
 } from "@/lib/delivery-data";
 
 export default function AttestationsScreen() {
@@ -35,6 +38,9 @@ export default function AttestationsScreen() {
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [livraisons, setLivraisons] = useState<LivraisonDetail[]>([]);
+  const [isLoadingLivraisons, setIsLoadingLivraisons] = useState(false);
+  const [errorLivraisons, setErrorLivraisons] = useState<string | null>(null);
 
   const loadTransactions = useCallback(async () => {
     setIsLoading(true);
@@ -53,16 +59,45 @@ export default function AttestationsScreen() {
     }
   }, []);
 
+  const loadLivraisons = useCallback(async () => {
+    setIsLoadingLivraisons(true);
+    setErrorLivraisons(null);
+
+    try {
+      const data = await getLivraisonsWithDetails();
+      setLivraisons(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      setErrorLivraisons(message);
+      setLivraisons([]);
+      console.error("[AttestationsPage] Erreur chargement livraisons:", err);
+    } finally {
+      setIsLoadingLivraisons(false);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadTransactions();
-    }, [loadTransactions]),
+      loadLivraisons();
+    }, [loadTransactions, loadLivraisons]),
   );
 
   const closeConfirmationModal = useCallback(async () => {
     setSelectedTransaction(null);
-    await loadTransactions();
-  }, [loadTransactions]);
+    console.log(
+      "[closeConfirmationModal] Rechargement des données après confirmation...",
+    );
+    try {
+      await Promise.all([loadTransactions(), loadLivraisons()]);
+      console.log("[closeConfirmationModal] Données rechargées avec succès");
+    } catch (err) {
+      console.error(
+        "[closeConfirmationModal] Erreur lors du rechargement:",
+        err,
+      );
+    }
+  }, [loadTransactions, loadLivraisons]);
 
   const cancelConfirmationModal = useCallback(() => {
     setSelectedTransaction(null);
@@ -70,19 +105,46 @@ export default function AttestationsScreen() {
 
   const confirmPickup = useCallback(async () => {
     if (!selectedTransaction) {
+      console.error("[confirmPickup] Aucune transaction sélectionnée");
       return;
     }
 
     setIsSubmitting(true);
+    console.log(
+      "[confirmPickup] Début confirmation pour:",
+      selectedTransaction.idInterne,
+    );
 
     try {
+      // Étape 1: Mettre à jour le statut de dispatch
+      console.log(
+        "[confirmPickup] Étape 1: Mise à jour du statut de dispatch...",
+      );
       await updateTransactionDispatchStatus(
         selectedTransaction.idInterne,
-        "en_cours",
+        "enleve_livreur",
       );
+      console.log(
+        "[confirmPickup] Étape 1: Statut de dispatch mis à jour avec succès",
+      );
+
+      // Étape 2: Créer la livraison
+      console.log("[confirmPickup] Étape 2: Création de la livraison...");
+      await createLivraison(selectedTransaction.idInterne);
+      console.log("[confirmPickup] Étape 2: Livraison créée avec succès");
+
+      // Étape 3: Fermer la modal et recharger
+      console.log("[confirmPickup] Étape 3: Fermeture de la modal...");
       await closeConfirmationModal();
+      console.log("[confirmPickup] Confirmation terminée avec succès");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erreur inconnue";
+      console.error("[confirmPickup] Erreur lors de la confirmation:", {
+        error: err,
+        message: message,
+        transactionId: selectedTransaction?.idInterne,
+        stack: err instanceof Error ? err.stack : undefined,
+      });
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -102,10 +164,7 @@ export default function AttestationsScreen() {
     if (error) {
       return (
         <View style={styles.tableState}>
-          <ThemedText
-            type="defaultSemiBold"
-            style={{ color: palette.danger }}
-          >
+          <ThemedText type="defaultSemiBold" style={{ color: palette.danger }}>
             Erreur
           </ThemedText>
           <ThemedText style={styles.tableStateText}>{error}</ThemedText>
@@ -171,7 +230,9 @@ export default function AttestationsScreen() {
                 { borderBottomColor: palette.tableRowBorder },
               ]}
             >
-              <ThemedText style={styles.idColumn}>{transaction.idInterne}</ThemedText>
+              <ThemedText style={styles.idColumn}>
+                {transaction.idInterne}
+              </ThemedText>
               <ThemedText style={styles.insurerColumn}>
                 {transaction.nomAssureur}
               </ThemedText>
@@ -207,6 +268,131 @@ export default function AttestationsScreen() {
     );
   };
 
+  const renderLivraisonsTable = () => {
+    if (isLoadingLivraisons) {
+      return (
+        <View style={styles.tableState}>
+          <ActivityIndicator size="large" />
+          <ThemedText style={styles.tableStateText}>Chargement...</ThemedText>
+        </View>
+      );
+    }
+
+    if (errorLivraisons) {
+      return (
+        <View style={styles.tableState}>
+          <ThemedText type="defaultSemiBold" style={{ color: palette.danger }}>
+            Erreur
+          </ThemedText>
+          <ThemedText style={styles.tableStateText}>
+            {errorLivraisons}
+          </ThemedText>
+          <TouchableOpacity
+            style={[
+              styles.retryButton,
+              { backgroundColor: palette.primaryButtonBackground },
+            ]}
+            onPress={loadLivraisons}
+          >
+            <ThemedText
+              style={{ color: palette.primaryButtonText, fontWeight: "600" }}
+            >
+              Reessayer
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (livraisons.length === 0) {
+      return (
+        <View style={styles.tableState}>
+          <ThemedText style={styles.tableStateText}>
+            Aucune livraison pour le moment
+          </ThemedText>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={styles.table}>
+          {/* En-tête */}
+          <View
+            style={[
+              styles.tableRow,
+              styles.tableHeader,
+              { backgroundColor: palette.tableHeaderBackground },
+            ]}
+          >
+            <ThemedText type="defaultSemiBold" style={styles.livraisonIdColumn}>
+              ID Livraison
+            </ThemedText>
+            <ThemedText
+              type="defaultSemiBold"
+              style={styles.livraisonTransIdColumn}
+            >
+              ID Transaction
+            </ThemedText>
+            <ThemedText type="defaultSemiBold" style={styles.livreurColumn}>
+              Livreur
+            </ThemedText>
+            <ThemedText type="defaultSemiBold" style={styles.insurerColumn}>
+              Assureur
+            </ThemedText>
+            <ThemedText type="defaultSemiBold" style={styles.relayColumn}>
+              Point relais
+            </ThemedText>
+            <ThemedText type="defaultSemiBold" style={styles.statutColumn}>
+              Statut
+            </ThemedText>
+            <ThemedText type="defaultSemiBold" style={styles.dateRecupColumn}>
+              Date récupération
+            </ThemedText>
+          </View>
+
+          {/* Lignes */}
+          {livraisons.map((livraison) => (
+            <View
+              key={livraison.idLivraison}
+              style={[
+                styles.tableRow,
+                { borderBottomColor: palette.tableRowBorder },
+              ]}
+            >
+              <ThemedText style={styles.livraisonIdColumn}>
+                {livraison.idLivraison}
+              </ThemedText>
+              <ThemedText style={styles.livraisonTransIdColumn}>
+                {livraison.idInterne} {/* ← plus de .transaction */}
+              </ThemedText>
+              <ThemedText style={styles.livreurColumn}>
+                {livraison.prenomLivreur} {livraison.nomLivreur}{" "}
+                {/* ← plus de .livreur */}
+              </ThemedText>
+              <ThemedText style={styles.insurerColumn}>
+                {livraison.nomAssureur}
+              </ThemedText>
+              <ThemedText style={styles.relayColumn}>
+                {livraison.pointRelais}
+              </ThemedText>
+              <ThemedText style={styles.statutColumn}>
+                {livraison.statutLivraison ?? "-"}
+              </ThemedText>
+              <ThemedText style={styles.dateRecupColumn}>
+                {livraison.dateRecuperation
+                  ? new Date(livraison.dateRecuperation).toLocaleDateString(
+                      "fr-FR",
+                    )
+                  : "-"}
+              </ThemedText>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    );
+  };
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView style={styles.scrollView}>
@@ -227,6 +413,25 @@ export default function AttestationsScreen() {
               ]}
             >
               {renderTransactionsTable()}
+            </ThemedView>
+
+            <ThemedView style={styles.livraisonSection}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Livraisons en cours
+                </ThemedText>
+                <ThemedText themeColor="textSecondary">
+                  Suivi des livraisons et de leur statut.
+                </ThemedText>
+              </View>
+              <ThemedView
+                style={[
+                  styles.tableContainer,
+                  { borderColor: palette.tableBorder },
+                ]}
+              >
+                {renderLivraisonsTable()}
+              </ThemedView>
             </ThemedView>
           </ThemedView>
         </SafeAreaView>
@@ -253,7 +458,8 @@ export default function AttestationsScreen() {
               Confirmer l'action
             </ThemedText>
             <ThemedText themeColor="textSecondary">
-              Marquer la transaction {selectedTransaction?.idInterne} comme en cours ?
+              Marquer la transaction {selectedTransaction?.idInterne} comme en
+              cours ?
             </ThemedText>
 
             <View style={styles.modalActions}>
@@ -364,6 +570,26 @@ const styles = StyleSheet.create({
     width: 140,
   },
   actionColumn: {
+    width: 140,
+  },
+  livraisonSection: {
+    flex: 1,
+    gap: Spacing.two,
+    marginTop: Spacing.three,
+  },
+  livraisonIdColumn: {
+    width: 100,
+  },
+  livraisonTransIdColumn: {
+    width: 120,
+  },
+  livreurColumn: {
+    width: 160,
+  },
+  statutColumn: {
+    width: 100,
+  },
+  dateRecupColumn: {
     width: 140,
   },
   primaryButton: {
