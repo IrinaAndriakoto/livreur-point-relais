@@ -460,7 +460,7 @@ export default function AttestationsScreen() {
             <ThemedView style={styles.livraisonSection}>
               <View style={styles.sectionHeader}>
                 <ThemedText type="subtitle" style={styles.sectionTitle}>
-                  Livraisons en cours
+                  Livraisons
                 </ThemedText>
                 <ThemedText themeColor="textSecondary">
                   Suivi des livraisons et de leur statut.
